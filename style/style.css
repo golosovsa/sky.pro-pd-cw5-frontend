@@ -1,0 +1,11 @@
+.page_hidden {
+  display: none;
+}
+
+.spinner__container {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  left: calc(50vw - 32px);
+  top: calc(50vh - 32px);
+}/*# sourceMappingURL=style.css.map */

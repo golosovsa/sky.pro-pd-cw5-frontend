@@ -1,0 +1,16 @@
+.page {
+    &_hidden {
+        display: none;
+    }
+}
+
+.spinner{
+
+    &__container {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        left: calc(50vw - 32px);
+        top: calc(50vh - 32px);
+    }
+}
