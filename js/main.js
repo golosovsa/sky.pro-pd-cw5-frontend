@@ -1,5 +1,13 @@
 const BACKEND_HOST="http://127.0.0.1:5000"
 
+function createLogMessage(message) {
+    const element = document.createElement("p");
+    const em = document.createElement("em");
+    em.textContent = message;
+    element.appendChild(em);
+    return element;
+}
+
 function createOption(value, text) {
     const element = document.createElement("option");
     element.setAttribute("value", value);
@@ -20,7 +28,7 @@ function removeChildren(node) {
 }
 
 async function fetchStatusAndPage() {
-    response = await fetch(BACKEND_HOST + "/status/");
+    const response = await fetch(BACKEND_HOST + "/status/");
     if (response.status !== 200) {
         return {
             server_status: "offline",
@@ -31,7 +39,7 @@ async function fetchStatusAndPage() {
 }
 
 async function fetchStartGame() {
-    response = await fetch(BACKEND_HOST + "/start-game/", {
+    const response = await fetch(BACKEND_HOST + "/start-game/", {
         method: "POST",
         cache: 'no-cache'
     });
@@ -43,7 +51,7 @@ async function fetchStartGame() {
 }
 
 async function fetchUnitClassesAndEquipment() {
-    response = await fetch(BACKEND_HOST + "/unit-class/");
+    let response = await fetch(BACKEND_HOST + "/unit-class/");
     if (response.status !== 200) {
         document.app.showError("Fetch unit class names failed. Refresh page (F5).");
         return null;
@@ -62,7 +70,7 @@ async function fetchUnitClassesAndEquipment() {
 }
 
 async function fetchCreatePlayer(data) {
-    response = await fetch(BACKEND_HOST + "/player/", {
+    const response = await fetch(BACKEND_HOST + "/player/", {
         method: "POST",
         cache: 'no-cache',
         body: new URLSearchParams(data),
@@ -75,7 +83,7 @@ async function fetchCreatePlayer(data) {
 }
 
 async function fetchCreateEnemy(data) {
-    response = await fetch(BACKEND_HOST + "/enemy/", {
+    const response = await fetch(BACKEND_HOST + "/enemy/", {
         method: "POST",
         cache: 'no-cache',
         body: new URLSearchParams(data),
@@ -85,6 +93,89 @@ async function fetchCreateEnemy(data) {
         return false;
     }
     return true;
+}
+
+async function fetchPlayerAndEnemy() {
+    let response = await fetch(BACKEND_HOST + "/player/");
+    if (response.status !== 200) {
+        document.app.showError("Fetch player failed. Refresh page (F5).");
+        return null;
+    }
+    const player = await response.json();
+    response = await fetch(BACKEND_HOST + "/enemy/");
+    if (response.status !== 200) {
+        document.app.showError("Fetch enemy failed. Refresh page (F5).");
+        return null;
+    }
+    const enemy = await response.json();
+    return {
+        player: player,
+        enemy: enemy,
+    };
+}
+
+async function fetchExpandPlayerAndEnemy(data) {
+    const playerUnitClass = data.player.unit_class;
+    const playerWeapon = data.player.weapon;
+    const playerArmor = data.player.armor;
+
+    const enemyUnitClass = data.enemy.unit_class;
+    const enemyWeapon = data.enemy.weapon;
+    const enemyArmor = data.enemy.armor;
+
+    let response = await fetch(BACKEND_HOST + `/unit-class/${playerUnitClass}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch player unit-class failed. Refresh page (F5).");
+        return null;
+    }
+    data.player.unit_class = await response.json();
+
+    response = await fetch(BACKEND_HOST + `/equipment/weapon/${playerWeapon}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch player weapon failed. Refresh page (F5).");
+        return null;
+    }
+    data.player.weapon = await response.json();
+
+    response = await fetch(BACKEND_HOST + `/equipment/armor/${playerArmor}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch player armor failed. Refresh page (F5).");
+        return null;
+    }
+    data.player.armor = await response.json();
+
+    response = await fetch(BACKEND_HOST + `/unit-class/${enemyUnitClass}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch enemy unit-class failed. Refresh page (F5).");
+        return null;
+    }
+    data.enemy.unit_class = await response.json();
+
+    response = await fetch(BACKEND_HOST + `/equipment/weapon/${enemyWeapon}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch enemy weapon failed. Refresh page (F5).");
+        return null;
+    }
+    data.enemy.weapon = await response.json();
+
+    response = await fetch(BACKEND_HOST + `/equipment/armor/${enemyArmor}`)
+    if (response.status !== 200) {
+        document.app.showError("Fetch enemy armor failed. Refresh page (F5).");
+        return null;
+    }
+    data.enemy.armor = await response.json();
+
+    return data;
+}
+
+async function fetchBattleLog() {
+    const response = await fetch(BACKEND_HOST + "/battle-log/");
+    if (response.status !== 200) {
+        document.app.showError("Fetch battle log failed. Refresh page (F5).");
+        return null;
+    }
+    data = await response.json();
+    return data;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -111,12 +202,37 @@ document.addEventListener("DOMContentLoaded", () => {
             createEnemyWeaponSelect: document.querySelector(".create-enemy__weapon"),
             createEnemyArmorSelect: document.querySelector(".create-enemy__armor"),
             createEnemyButton: document.querySelector(".button__create-enemy"),
+
+            fightPlayerName: document.querySelector(".fight__player-name"),
+            fightPlayerClass: document.querySelector(".fight__player-class"),
+            fightPlayerWeapon: document.querySelector(".fight__player-weapon"),
+            fightPlayerArmor: document.querySelector(".fight__player-armor"),
+            fightPlayerHP: document.querySelector(".fight__player-hp"),
+            fightPlayerMaxHP: document.querySelector(".fight__player-max-hp"),
+            fightPlayerStamina: document.querySelector(".fight__player-stamina"),
+            fightPlayerMaxStamina: document.querySelector(".fight__player-max-stamina"),
+
+            fightButtonHit: document.querySelector(".fight__button_hit"),
+            fightButtonSkill: document.querySelector(".fight__button_skill"),
+            fightButtonSkip: document.querySelector(".fight__button_skip"),
+            fightButtonExit: document.querySelector(".fight__button_exit"),
+
+            fightEnemyName: document.querySelector(".fight__enemy-name"),
+            fightEnemyClass: document.querySelector(".fight__enemy-class"),
+            fightEnemyWeapon: document.querySelector(".fight__enemy-weapon"),
+            fightEnemyArmor: document.querySelector(".fight__enemy-armor"),
+            fightEnemyHP: document.querySelector(".fight__enemy-hp"),
+            fightEnemyMaxHP: document.querySelector(".fight__enemy-max-hp"),
+            fightEnemyStamina: document.querySelector(".fight__enemy-stamina"),
+            fightEnemyMaxStamina: document.querySelector(".fight__enemy-max-stamina"),
+
+            fightConsole: document.querySelector(".fight__console"),
         },
         pages: {
             pageStartAndResults: document.querySelector(".page_start_and_results"),
             pageCreatePlayer: document.querySelector(".page_create_player"),
             pageCreateEnemy: document.querySelector(".page_create_enemy"),
-            
+            pageFight: document.querySelector(".page_fight"),
         },
         
         currentPage: null,
@@ -129,6 +245,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 page = data.current_screen;
 
                 if (document.app.currentPage === page) {
+                    
+                    if (page === "fight") {
+                        document.app.updateFight();
+                    }
+
                     return
                 }
 
@@ -146,6 +267,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         break;
                     case "create_enemy":
                         document.app.createEnemy();
+                        break;
+                    case "fight":
+                        document.app.fight()
                         break;
                     default:
                         break;
@@ -198,7 +322,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         document.app.blocks.spinner.start()
                     }
                 })
-            })
+            });
+
+            document.app.blocks.fightButtonHit.addEventListener("click", () => {
+                console.log("HIT");
+            });
+
+            document.app.blocks.fightButtonSkill.addEventListener("click", () => {
+                console.log("SKILL");
+            });
+
+            document.app.blocks.fightButtonSkip.addEventListener("click", () => {
+                console.log("SKIP");
+            });
+
+            document.app.blocks.fightButtonExit.addEventListener("click", () => {
+                console.log("EXIT");
+            });
 
 
             document.app.idleTimerID = setInterval(document.app.idle, 1000);
@@ -299,7 +439,106 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.app.blocks.spinner.halt();
                 document.app.pages.pageCreateEnemy.classList.remove("page_hidden")
             })
-        }
+        },
+
+        fight: function() {
+            fetchPlayerAndEnemy().then(data => {
+                if (data === null) {
+                    return
+                }
+
+                fetchExpandPlayerAndEnemy(data).then(data => {
+                    document.app.currentPage = "fight";
+
+                    const playerName = document.app.blocks.fightPlayerName;
+                    const playerClass = document.app.blocks.fightPlayerClass;
+                    const playerWeapon = document.app.blocks.fightPlayerWeapon;
+                    const playerArmor = document.app.blocks.fightPlayerArmor;
+                    const playerHP = document.app.blocks.fightPlayerHP;
+                    const playerMaxHP = document.app.blocks.fightPlayerMaxHP;
+                    const playerStamina = document.app.blocks.fightPlayerStamina;
+                    const playerMaxStamina = document.app.blocks.fightPlayerMaxStamina;
+                    const enemyName = document.app.blocks.fightEnemyName;
+                    const enemyClass = document.app.blocks.fightEnemyClass;
+                    const enemyWeapon = document.app.blocks.fightEnemyWeapon;
+                    const enemyArmor = document.app.blocks.fightEnemyArmor;
+                    const enemyHP = document.app.blocks.fightEnemyHP;
+                    const enemyMaxHP = document.app.blocks.fightEnemyMaxHP;
+                    const enemyStamina = document.app.blocks.fightEnemyStamina;
+                    const enemyMaxStamina = document.app.blocks.fightEnemyMaxStamina;
+
+                    playerName.textContent = data.player.name;
+                    playerClass.textContent = data.player.unit_class.name;
+                    playerWeapon.textContent = `Оружие: ${data.player.weapon.name}, урон: ${data.player.weapon.min_damage} - ${data.player.weapon.max_damage}`;
+                    playerArmor.textContent = `Броня: ${data.player.armor.name}, защита: ${data.player.armor.defence}`;
+                    playerHP.textContent = data.player.health_points
+                    playerMaxHP.textContent = data.player.unit_class.max_health
+                    playerStamina.textContent = data.player.stamina_points;
+                    playerMaxStamina.textContent = data.player.unit_class.max_stamina;
+
+                    enemyName.textContent = data.enemy.name;
+                    enemyClass.textContent = data.enemy.unit_class.name;
+                    enemyWeapon.textContent = `Оружие: ${data.enemy.weapon.name}, урон: ${data.enemy.weapon.min_damage} - ${data.enemy.weapon.max_damage}`;
+                    enemyArmor.textContent = `Броня: ${data.enemy.armor.name}, защита: ${data.enemy.armor.defence}`;
+                    enemyHP.textContent = data.enemy.health_points
+                    enemyMaxHP.textContent = data.enemy.unit_class.max_health
+                    enemyStamina.textContent = data.enemy.stamina_points;
+                    enemyMaxStamina.textContent = data.enemy.unit_class.max_stamina;
+
+                    document.app.blocks.spinner.halt();
+                    document.app.pages.pageFight.classList.remove("page_hidden")
+                })
+            })
+        },
+
+        log: [],
+
+        updateFight: function() {
+            fetchPlayerAndEnemy().then(data => {
+                if (data === null) {
+                    return
+                }
+
+                const playerHP = document.app.blocks.fightPlayerHP;
+                const playerStamina = document.app.blocks.fightPlayerStamina;
+                const enemyHP = document.app.blocks.fightEnemyHP;
+                const enemyStamina = document.app.blocks.fightEnemyStamina;
+                playerHP.textContent = data.player.health_points
+                playerStamina.textContent = data.player.stamina_points;
+                enemyHP.textContent = data.enemy.health_points
+                enemyStamina.textContent = data.enemy.stamina_points;
+
+            });
+
+            fetchBattleLog().then(data => {
+                if (data === null) {
+                    return
+                }
+
+                const log = document.app.log;
+
+                log.concat(data.log)
+
+                if (log.length === 0) {
+                    const buttonHit = document.app.blocks.fightButtonHit;
+                    const buttonSkill = document.app.blocks.fightButtonSkill;
+                    const buttonSkip = document.app.blocks.fightButtonSkip;
+                    const buttonExit = document.app.blocks.fightButtonExit;
+
+                    buttonHit.disabled = false;
+                    buttonSkill.disabled = false;
+                    buttonSkip.disabled = false;
+                    buttonExit.disabled = false;
+                } else {
+                    const fightConsole = document.app.fightConsole;
+                    const message = log.shift();
+                    fightConsole.insertBefore(
+                        createLogMessage(message), 
+                        fightConsole.firstChild
+                    );
+                }
+            })
+        },
     };
 
     document.app.run()
