@@ -178,6 +178,20 @@ async function fetchBattleLog() {
     return data;
 }
 
+async function fetchFight(action) {
+    const response = await fetch(BACKEND_HOST + "/fight/", {
+        method: "POST",
+        cache: 'no-cache',
+        body: new URLSearchParams({action: action,}),
+    });
+
+    if (response.status !== 201) {
+        document.app.showError("Fetch fight failed. Refresh page (F5).");
+        return false;
+    }
+    return true;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     
     document.app = {
@@ -236,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         
         currentPage: null,
+
         idle: function() {
             fetchStatusAndPage().then((data) => {
                 if (data.server_status !== "online") {
@@ -243,6 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return
                 }
                 page = data.current_screen;
+
 
                 if (document.app.currentPage === page) {
                     
@@ -255,8 +271,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 document.app.hideAllPages();
                 document.app.blocks.spinner.start()
-
-                console.log(page);
 
                 switch (page) {
                     case "start_and_results":
@@ -325,28 +339,81 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             document.app.blocks.fightButtonHit.addEventListener("click", () => {
-                console.log("HIT");
+                fetchFight("hit").then(is_ok => {
+                    if (!is_ok) {
+                        return
+                    }
+                    const buttonHit = document.app.blocks.fightButtonHit;
+                    const buttonSkill = document.app.blocks.fightButtonSkill;
+                    const buttonSkip = document.app.blocks.fightButtonSkip;
+                    const buttonExit = document.app.blocks.fightButtonExit;
+
+                    buttonHit.disabled = true;
+                    buttonSkill.disabled = true;
+                    buttonSkip.disabled = true;
+                    buttonExit.disabled = true;
+                })
             });
 
             document.app.blocks.fightButtonSkill.addEventListener("click", () => {
-                console.log("SKILL");
+                fetchFight("skill").then(is_ok => {
+                    if (!is_ok) {
+                        return
+                    }
+                    const buttonHit = document.app.blocks.fightButtonHit;
+                    const buttonSkill = document.app.blocks.fightButtonSkill;
+                    const buttonSkip = document.app.blocks.fightButtonSkip;
+                    const buttonExit = document.app.blocks.fightButtonExit;
+
+                    buttonHit.disabled = true;
+                    buttonSkill.disabled = true;
+                    buttonSkip.disabled = true;
+                    buttonExit.disabled = true;
+                })
             });
 
             document.app.blocks.fightButtonSkip.addEventListener("click", () => {
-                console.log("SKIP");
+                fetchFight("skip").then(is_ok => {
+                    if (!is_ok) {
+                        return
+                    }
+                    const buttonHit = document.app.blocks.fightButtonHit;
+                    const buttonSkill = document.app.blocks.fightButtonSkill;
+                    const buttonSkip = document.app.blocks.fightButtonSkip;
+                    const buttonExit = document.app.blocks.fightButtonExit;
+
+                    buttonHit.disabled = true;
+                    buttonSkill.disabled = true;
+                    buttonSkip.disabled = true;
+                    buttonExit.disabled = true;
+                })
             });
 
             document.app.blocks.fightButtonExit.addEventListener("click", () => {
-                console.log("EXIT");
+                fetchFight("exit").then(is_ok => {
+                    if (!is_ok) {
+                        return
+                    }
+                    const buttonHit = document.app.blocks.fightButtonHit;
+                    const buttonSkill = document.app.blocks.fightButtonSkill;
+                    const buttonSkip = document.app.blocks.fightButtonSkip;
+                    const buttonExit = document.app.blocks.fightButtonExit;
+
+                    buttonHit.disabled = true;
+                    buttonSkill.disabled = true;
+                    buttonSkip.disabled = true;
+                    buttonExit.disabled = true;
+                })
             });
 
 
-            document.app.idleTimerID = setInterval(document.app.idle, 1000);
+            document.app.idleTimerID = setInterval(document.app.idle, 700);
         },
 
         showError: function(errorMessage) {
             clearInterval(document.app.idleTimerID);
             console.log(errorMessage);
+            window.location.reload();
         },
 
         hideAllPages: function() {
@@ -383,8 +450,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 clsSelect.appendChild(createOption("", "Выберите класс"))
                 weaponSelect.appendChild(createOption("", "Выберите оружие"))
                 armorSelect.appendChild(createOption("", "Выберите броню"))
-
-                console.log(data);
 
                 for (const cls of data.unitClassNames.unit_class_names) {
                     clsSelect.appendChild(createOption(cls, cls));
@@ -471,19 +536,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     playerClass.textContent = data.player.unit_class.name;
                     playerWeapon.textContent = `Оружие: ${data.player.weapon.name}, урон: ${data.player.weapon.min_damage} - ${data.player.weapon.max_damage}`;
                     playerArmor.textContent = `Броня: ${data.player.armor.name}, защита: ${data.player.armor.defence}`;
-                    playerHP.textContent = data.player.health_points
-                    playerMaxHP.textContent = data.player.unit_class.max_health
-                    playerStamina.textContent = data.player.stamina_points;
+                    playerHP.textContent = Math.round(data.player.health_points, -2);
+                    playerMaxHP.textContent = data.player.unit_class.max_health;
+                    playerStamina.textContent = Math.round(data.player.stamina_points, -2);
                     playerMaxStamina.textContent = data.player.unit_class.max_stamina;
 
                     enemyName.textContent = data.enemy.name;
                     enemyClass.textContent = data.enemy.unit_class.name;
                     enemyWeapon.textContent = `Оружие: ${data.enemy.weapon.name}, урон: ${data.enemy.weapon.min_damage} - ${data.enemy.weapon.max_damage}`;
                     enemyArmor.textContent = `Броня: ${data.enemy.armor.name}, защита: ${data.enemy.armor.defence}`;
-                    enemyHP.textContent = data.enemy.health_points
-                    enemyMaxHP.textContent = data.enemy.unit_class.max_health
-                    enemyStamina.textContent = data.enemy.stamina_points;
+                    enemyHP.textContent = Math.round(data.enemy.health_points, -2);
+                    enemyMaxHP.textContent = data.enemy.unit_class.max_health;
+                    enemyStamina.textContent = Math.round(data.enemy.stamina_points, -2);
                     enemyMaxStamina.textContent = data.enemy.unit_class.max_stamina;
+
+                    document.app.blocks.fightConsole.replaceChildren();
+                    document.app.log = [];
 
                     document.app.blocks.spinner.halt();
                     document.app.pages.pageFight.classList.remove("page_hidden")
@@ -503,10 +571,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const playerStamina = document.app.blocks.fightPlayerStamina;
                 const enemyHP = document.app.blocks.fightEnemyHP;
                 const enemyStamina = document.app.blocks.fightEnemyStamina;
-                playerHP.textContent = data.player.health_points
-                playerStamina.textContent = data.player.stamina_points;
-                enemyHP.textContent = data.enemy.health_points
-                enemyStamina.textContent = data.enemy.stamina_points;
+                playerHP.textContent = Math.round(data.player.health_points * 100) / 100;
+                playerStamina.textContent = Math.round(data.player.stamina_points * 100) / 100;
+                enemyHP.textContent = Math.round(data.enemy.health_points * 100) / 100;
+                enemyStamina.textContent = Math.round(data.enemy.stamina_points * 100) / 100;
 
             });
 
@@ -515,9 +583,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return
                 }
 
+                document.app.log = document.app.log.concat(data.log)
                 const log = document.app.log;
-
-                log.concat(data.log)
 
                 if (log.length === 0) {
                     const buttonHit = document.app.blocks.fightButtonHit;
@@ -530,7 +597,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     buttonSkip.disabled = false;
                     buttonExit.disabled = false;
                 } else {
-                    const fightConsole = document.app.fightConsole;
+                    const fightConsole = document.app.blocks.fightConsole;
                     const message = log.shift();
                     fightConsole.insertBefore(
                         createLogMessage(message), 
