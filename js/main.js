@@ -1,4 +1,4 @@
-const BACKEND_HOST="http://127.0.0.1:5000"
+const BACKEND_HOST="http://sky.pro-pd-cw5.ru/app"
 
 function createLogMessage(message) {
     const element = document.createElement("p");
