@@ -1,4 +1,4 @@
-const BACKEND_HOST="localhost/app"
+const BACKEND_HOST="/app"
 
 function createLogMessage(message) {
     const element = document.createElement("p");
