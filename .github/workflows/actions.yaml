@@ -2,13 +2,13 @@ name: docker build and push
 on: [push]
 jobs:
   docker_build_and_push:
-  runs-on: ubuntu-latest
-  steps:
-    - name: copy code
-      uses: actions/checkout@v3
-    - name: build docker
-      run: docker build -t golosovsa/skypro-pd-cw5 .
-    - name: docker login
-      run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
-    - name: docker push
-      run: docker push golosovsa/skypro-pd-cw5
+    runs-on: ubuntu-latest
+    steps:
+      - name: copy code
+        uses: actions/checkout@v3
+      - name: build docker
+        run: docker build -t golosovsa/skypro-pd-cw5 .
+      - name: docker login
+        run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+      - name: docker push
+        run: docker push golosovsa/skypro-pd-cw5
