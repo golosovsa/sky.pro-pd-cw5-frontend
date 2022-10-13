@@ -241,12 +241,15 @@ document.addEventListener("DOMContentLoaded", () => {
             fightEnemyMaxStamina: document.querySelector(".fight__enemy-max-stamina"),
 
             fightConsole: document.querySelector(".fight__console"),
+
+            errorMsg: document.querySelector(".page__error-msg"),
         },
         pages: {
             pageStartAndResults: document.querySelector(".page_start_and_results"),
             pageCreatePlayer: document.querySelector(".page_create_player"),
             pageCreateEnemy: document.querySelector(".page_create_enemy"),
             pageFight: document.querySelector(".page_fight"),
+            pageError: document.querySelector(".page_error"),
         },
         
         currentPage: null,
@@ -413,7 +416,9 @@ document.addEventListener("DOMContentLoaded", () => {
         showError: function(errorMessage) {
             clearInterval(document.app.idleTimerID);
             console.log(errorMessage);
-            window.location.reload();
+            document.app.blocks.errorMsg.textContent = errorMessage;
+            document.app.pages.pageError.classList.remove("page_hidden")
+            // window.location.reload();
         },
 
         hideAllPages: function() {
